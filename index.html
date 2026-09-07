@@ -151,6 +151,8 @@ main,.rail,.nav,footer{position:relative;z-index:2}
 .avatar{position:relative;z-index:2;transform:translateZ(0);width:clamp(180px,22vw,300px);aspect-ratio:32/40;image-rendering:pixelated;filter:drop-shadow(0 30px 40px rgba(0,0,0,.55))}
 @keyframes spin{to{transform:rotate(360deg)}}
 .name .ch{display:inline-block;will-change:transform}
+.name .wd{display:inline-block;white-space:nowrap}
+.name .wd+.wd{margin-left:.18em}
 .stage3d{position:relative;z-index:3;flex:1;min-height:clamp(400px,58vh,640px);margin-top:calc(-1 * clamp(6px,1.4vw,22px));transform-style:preserve-3d;display:grid;place-items:center}
 .orbit{position:absolute;inset:0;transform-style:preserve-3d;pointer-events:none}
 .sat{position:absolute;left:50%;top:50%;--sw:clamp(92px,9.6vw,140px);width:var(--sw);aspect-ratio:406/900;margin:calc(var(--sw)*-1.108) 0 0 calc(var(--sw)*-.5);background:#0B0D11;border-radius:calc(var(--sw)*.15);padding:calc(var(--sw)*.028);box-shadow:0 30px 60px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.14);backface-visibility:hidden;transform-style:preserve-3d;pointer-events:auto;cursor:grab;will-change:transform}
@@ -180,6 +182,10 @@ main,.rail,.nav,footer{position:relative;z-index:2}
 :root[data-theme="light"] .mood .warm,:root[data-theme="light"] .mood .flake{display:inline}
 :root[data-theme="light"] .mood .cool,:root[data-theme="light"] .mood .sun{display:none}
 @media (prefers-reduced-motion:reduce){.mood-ring{animation:none}}
+html,body{overflow-x:clip}
+@media (max-width:520px){.nav{gap:4px;padding:5px 5px 5px 10px}#sndBtn{display:none}.nav .brand{padding-right:8px;font-size:20px}}
+@media (max-width:1000px){.work{overflow:clip}}
+@media (max-width:720px){.sec-head{flex-direction:column;align-items:flex-start;gap:12px}.sec-head .note{text-align:left;max-width:none}.tile .icons{position:static;justify-content:flex-start;margin-bottom:18px}.tile .bignum{font-size:clamp(52px,15vw,72px)}footer{padding-bottom:84px}.work-top>*:last-child{display:none}}
 @media (max-width:720px){.name{white-space:normal;font-size:clamp(64px,19vw,110px);line-height:.86}.hero{padding-top:clamp(88px,12vh,120px)}.stage3d{min-height:clamp(360px,52vh,520px)}.mood{width:62px}.mood-ring{font-size:21px}.hero-foot{padding-bottom:96px}}
 
 /* ============ sections ============ */
@@ -206,7 +212,7 @@ main,.rail,.nav,footer{position:relative;z-index:2}
 .work-stats span{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-top:6px}
 .stage{position:relative;height:clamp(440px,62vh,640px);perspective:1400px;transform-style:preserve-3d;pointer-events:none}
 .stage .card,.stage .sat{pointer-events:auto}
-.card{position:absolute;left:50%;top:50%;width:min(58vw,450px);aspect-ratio:3/4;margin:calc(min(58vw,450px)*-.667) 0 0 calc(min(58vw,450px)*-.5);border-radius:18px;overflow:hidden;background:var(--bg3);border:1px solid var(--line2);box-shadow:var(--shadow);will-change:transform,opacity;transform-style:preserve-3d;opacity:0;visibility:hidden}
+.card{--cw:min(58vw,450px);position:absolute;left:50%;top:50%;width:var(--cw);aspect-ratio:3/4;margin:calc(var(--cw)*-.667) 0 0 calc(var(--cw)*-.5);border-radius:18px;overflow:hidden;background:var(--bg3);border:1px solid var(--line2);box-shadow:var(--shadow);will-change:transform,opacity;transform-style:preserve-3d;opacity:0;visibility:hidden}
 .card:not(.is-active){cursor:pointer}
 .card-vis{position:absolute;inset:0;display:grid;place-items:center;overflow:hidden}
 .card-vis::before{content:"";position:absolute;inset:0;background:var(--cbg);opacity:.9}
@@ -359,6 +365,7 @@ footer b{color:var(--muted);font-weight:500}
 @media (prefers-reduced-motion:reduce){
   .rail-track,.marq-track,.ibtn.dial::after,.grain,.hud .dot{animation:none!important}
 }
+@media (max-width:720px){.card{--cw:76vw}.card-cap{flex-direction:column;align-items:flex-start;gap:3px}.card-vis .arch{zoom:.68}}
 </style>
 </head>
 <body>
@@ -892,7 +899,7 @@ if (!reduced) gsap.ticker.add(() => {
 
 /* ---------- preloader + intro ---------- */
 const pre = $('#pre'), preNum = $('#preNum'), preBar = $('#preBar');
-const nameSplit = new SplitText('#name', { type: 'chars', charsClass: 'ch' });
+const nameSplit = new SplitText('#name', { type: 'words,chars', charsClass: 'ch', wordsClass: 'wd' });
 const intro = gsap.timeline({ paused: true });
 intro.from(nameSplit.chars, { yPercent: 120, rotate: 5, duration: 1.1, ease: 'expo.out', stagger: .035 })
   .from('#avatar', { scale: .5, yPercent: 24, autoAlpha: 0, duration: 1, ease: 'back.out(1.5)' }, '-=.7')
