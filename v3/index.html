@@ -967,7 +967,7 @@ if (fine && !reduced) {
   const spawn = (x, y, vx, vy, n, spread = 1.2) => {
     for (let i = 0; i < n; i++) {
       if (P.length > 420) P.shift();
-      P.push({ x: x + (Math.random() - .5) * 10, y: y + (Math.random() - .5) * 10, vx: vx + (Math.random() - .5) * spread, vy: vy + (Math.random() - .5) * spread, l: 1, d: .028 + Math.random() * .016, s: 4, w: false });
+      P.push({ x: x + (Math.random() - .5) * 10, y: y + (Math.random() - .5) * 10, vx: vx + (Math.random() - .5) * spread, vy: vy + (Math.random() - .5) * spread, l: 1, d: .016 + Math.random() * .014, s: Math.random() < .3 ? 8 : 4, w: Math.random() < .35 });
     }
   };
 
@@ -999,7 +999,7 @@ if (fine && !reduced) {
 
   gsap.ticker.add(() => {
     const vx = mx - lx, vy = my - ly, speed = Math.hypot(vx, vy); lx = mx; ly = my;
-    if (speed > 6 && !hidden) spawn(mx, my, -vx * .03, -vy * .03, Math.min(3, speed / 16 | 0) || 1, .4);
+    if (speed > 1 && !hidden) spawn(mx, my, -vx * .12, -vy * .12, Math.min(12, 2 + (speed / 5 | 0)), 1.8);
 
     // reticle: free (tilts with velocity), lock (wraps the target like focus brackets), or label (opens up)
     let tw = 36, th = 36, cx = mx, cy = my, tr = 0;
@@ -1027,10 +1027,10 @@ if (fine && !reduced) {
       tc.clearRect(0, 0, vw, vh);
       for (let i = P.length - 1; i >= 0; i--) {
         const p = P[i];
-        p.x += p.vx; p.y += p.vy; p.vx *= .9; p.vy *= .9; p.l -= p.d;
+        p.x += p.vx; p.y += p.vy; p.vx *= .95; p.vy = p.vy * .95 + .04; p.l -= p.d;
         if (p.l <= 0) { P.splice(i, 1); continue; }
         const s = p.s * (.5 + p.l * .5);
-        tc.globalAlpha = p.l * p.l * .7; tc.fillStyle = p.w ? ink : acc;
+        tc.globalAlpha = Math.min(1, p.l * 1.4); tc.fillStyle = p.w ? ink : acc;
         tc.fillRect(Math.round(p.x / 4) * 4, Math.round(p.y / 4) * 4, s, s);
       }
       tc.globalAlpha = 1;
