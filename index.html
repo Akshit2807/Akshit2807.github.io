@@ -476,6 +476,20 @@ p{color:var(--muted)}
     })(window, document, "clarity", "script", "yivjj0xlbd");
     clarity("set", "page_version", "prod");
 </script>
+<!-- Google Analytics 4 (gtag.js; the same property Firebase Analytics uses). Paste your G-XXXXXXXXXX measurement ID into GA_ID. -->
+<script>
+    window.GA_ID = 'G-Y6YF312F2S';
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    (function () {
+        if (!window.GA_ID || /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname)) return;
+        var s = document.createElement('script'); s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GA_ID;
+        document.head.appendChild(s);
+        gtag('js', new Date());
+        gtag('config', window.GA_ID, { page_version: 'prod' });
+    })();
+</script>
 </head>
 <body>
 
@@ -939,8 +953,15 @@ addEventListener('resize', () => { if (innerWidth === lastW) return; lastW = inn
 const onWidth = f => widthFns.push(f);
 
 /* ---------- analytics: Microsoft Clarity custom events + session tags (no personal data) ---------- */
-const track = (name, tags) => { try { if (!window.clarity) return; clarity('event', name); if (tags) Object.entries(tags).forEach(([k, v]) => clarity('set', k, String(v))); } catch (e) {} };
-const tag = (k, v) => { try { window.clarity && clarity('set', k, String(v)); } catch (e) {} };
+const ga = () => window.GA_ID && typeof window.gtag === 'function';
+const track = (name, tags) => {
+  try { if (window.clarity) { clarity('event', name); if (tags) Object.entries(tags).forEach(([k, v]) => clarity('set', k, String(v))); } } catch (e) {}
+  try { if (ga()) gtag('event', name, tags ? Object.fromEntries(Object.entries(tags).map(([k, v]) => [k.slice(0, 40), String(v).slice(0, 100)])) : {}); } catch (e) {}
+};
+const tag = (k, v) => {
+  try { window.clarity && clarity('set', k, String(v)); } catch (e) {}
+  try { if (ga()) gtag('set', 'user_properties', { [k.slice(0, 24)]: String(v).slice(0, 36) }); } catch (e) {}
+};
 const upgrade = reason => { try { window.clarity && clarity('upgrade', reason); } catch (e) {} };
 const onceSeen = new Set();
 const trackOnce = (name, tags) => { if (onceSeen.has(name)) return; onceSeen.add(name); track(name, tags); };

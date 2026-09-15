@@ -377,6 +377,20 @@ footer b{color:var(--muted);font-weight:500}
     })(window, document, "clarity", "script", "yivjj0xlbd");
     clarity("set", "page_version", "d1");
 </script>
+<!-- Google Analytics 4 (gtag.js; the same property Firebase Analytics uses). Paste your G-XXXXXXXXXX measurement ID into GA_ID. -->
+<script>
+    window.GA_ID = 'G-Y6YF312F2S';
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){ dataLayer.push(arguments); }
+    (function () {
+        if (!window.GA_ID || /^(localhost|127\.|0\.0\.0\.0|\[::1\])/.test(location.hostname)) return;
+        var s = document.createElement('script'); s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + window.GA_ID;
+        document.head.appendChild(s);
+        gtag('js', new Date());
+        gtag('config', window.GA_ID, { page_version: 'd1' });
+    })();
+</script>
 </head>
 <body>
 
