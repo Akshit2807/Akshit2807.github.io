@@ -373,6 +373,27 @@ p{color:var(--muted)}
 .status-msg.ok{color:#3DDC84}.status-msg.err{color:#FF7A7A}
 .hp{position:absolute;left:-9999px;opacity:0}
 
+/* ============ cursor: target-lock reticle + pixel comet ============ */
+.cur-on,.cur-on *{cursor:none!important}
+.cur-on input,.cur-on textarea{cursor:text!important}
+.cur{position:fixed;left:0;top:0;z-index:300;pointer-events:none;mix-blend-mode:difference;transition:opacity .25s}
+.cur.is-hidden{opacity:0}
+.cur-box{position:absolute;left:0;top:0;width:36px;height:36px;will-change:transform}
+.cur-box i{position:absolute;width:9px;height:9px;border:0 solid #fff;transition:width .35s var(--ease),height .35s var(--ease)}
+.cur-box i:nth-child(1){left:0;top:0;border-left-width:1.5px;border-top-width:1.5px}
+.cur-box i:nth-child(2){right:0;top:0;border-right-width:1.5px;border-top-width:1.5px}
+.cur-box i:nth-child(3){left:0;bottom:0;border-left-width:1.5px;border-bottom-width:1.5px}
+.cur-box i:nth-child(4){right:0;bottom:0;border-right-width:1.5px;border-bottom-width:1.5px}
+.cur.is-lock .cur-box i{width:13px;height:13px}
+.cur-dot{position:absolute;left:-3px;top:-3px;width:6px;height:6px;background:#fff;transition:scale .25s var(--ease),opacity .2s}
+.cur.is-lock .cur-dot{scale:.5}
+.cur.is-down .cur-dot{scale:2.2}
+/* label lives outside the blended reticle so it stays a solid chip over light screenshots */
+.cur-label{position:fixed;left:0;top:0;z-index:301;pointer-events:none;padding:6px 8px;border-radius:4px;background:var(--accent);color:#fff;font:500 10px/1 var(--mono);letter-spacing:.16em;text-transform:uppercase;white-space:nowrap;opacity:0;scale:.6;transform-origin:0 100%;transition:opacity .2s,scale .35s var(--ease)}
+.cur-label.on{opacity:1;scale:1}
+.cur-trail{position:fixed;inset:0;width:100%;height:100%;z-index:299;pointer-events:none}
+.cur-wave{position:fixed;left:0;top:0;z-index:299;width:40px;height:40px;margin:-20px 0 0 -20px;border:1.5px solid var(--accent-text);pointer-events:none}
+
 @media (prefers-reduced-motion:reduce){
   *,*::before,*::after{animation:none!important;transition-duration:.01ms!important}
 }
@@ -893,6 +914,100 @@ if (!reduced && typeof gsap !== 'undefined') {
 }
 
 if (typeof gsap === 'undefined') { $('#pre').remove(); return; }
+
+/* ---------- cursor: target-lock reticle + pixel comet (fine pointers only) ---------- */
+if (fine && !reduced) {
+  root.classList.add('cur-on');
+  const cur = document.createElement('div'), trail = document.createElement('canvas');
+  cur.className = 'cur is-hidden'; trail.className = 'cur-trail';
+  cur.setAttribute('aria-hidden', 'true'); trail.setAttribute('aria-hidden', 'true');
+  cur.innerHTML = '<div class="cur-box"><i></i><i></i><i></i><i></i></div><div class="cur-dot"></div>';
+  const lab = document.createElement('span'); lab.className = 'cur-label'; lab.setAttribute('aria-hidden', 'true');
+  document.body.append(trail, cur, lab);
+  const box = cur.querySelector('.cur-box'), dot = cur.querySelector('.cur-dot'), tc = trail.getContext('2d');
+  let vw = 0, vh = 0;
+  const fit = () => { const d = Math.min(devicePixelRatio, 2); vw = innerWidth; vh = innerHeight; trail.width = vw * d; trail.height = vh * d; tc.setTransform(d, 0, 0, d, 0, 0); };
+  fit(); addEventListener('resize', fit);
+  let ink = '', acc = '';
+  const readColors = () => { const cs = getComputedStyle(root); ink = cs.getPropertyValue('--text').trim(); acc = cs.getPropertyValue('--accent-text').trim(); };
+  readColors(); new MutationObserver(readColors).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+
+  const P = []; // pixel particles
+  const spawn = (x, y, vx, vy, n, spread = 1.2) => {
+    for (let i = 0; i < n; i++) {
+      if (P.length > 420) P.shift();
+      P.push({ x: x + (Math.random() - .5) * 10, y: y + (Math.random() - .5) * 10, vx: vx + (Math.random() - .5) * spread, vy: vy + (Math.random() - .5) * spread, l: 1, d: .016 + Math.random() * .014, s: Math.random() < .3 ? 8 : 4, w: Math.random() < .35 });
+    }
+  };
+
+  let lock = null, magnet = null, hidden = true, lx = mx, ly = my;
+  let bx = mx, by = my, bw = 36, bh = 36, rot = 0, mEl = null, mX = 0, mY = 0;
+  document.addEventListener('pointerover', e => {
+    const t = e.target;
+    const inField = !!t.closest('input,textarea');
+    const sat = t.closest('.sat'), card = t.closest('.card');
+    let label = '';
+    if (sat) label = 'Drag';
+    else if (card && !card.classList.contains('is-active')) label = 'Open';
+    lock = (!sat && !inField) ? t.closest('a,button') : null;
+    magnet = lock && lock.matches('.btn,.nav-links a,.menu-btn,.brand,.ctr button,.mood,.x,.links a') ? lock : null;
+    lab.textContent = label;
+    lab.classList.toggle('on', !!label);
+    cur.classList.toggle('is-lock', !!lock);
+    hidden = inField; cur.classList.toggle('is-hidden', hidden);
+  });
+  document.documentElement.addEventListener('mouseleave', () => { hidden = true; cur.classList.add('is-hidden'); lab.classList.remove('on'); });
+  addEventListener('pointermove', () => { if (hidden && !$('input:hover,textarea:hover')) { hidden = false; cur.classList.remove('is-hidden'); } }, { passive: true });
+  addEventListener('pointerdown', e => {
+    if (e.pointerType !== 'mouse') return;
+    cur.classList.add('is-down');
+    for (let i = 0; i < 26; i++) { const a = (i / 26) * Math.PI * 2, s = 2 + Math.random() * 4.5; spawn(e.clientX, e.clientY, Math.cos(a) * s, Math.sin(a) * s, 1, .6); }
+    const w = document.createElement('div'); w.className = 'cur-wave'; w.style.translate = `${e.clientX}px ${e.clientY}px`; document.body.appendChild(w);
+    gsap.fromTo(w, { scale: .3, opacity: 1, rotate: 0 }, { scale: 2.8, opacity: 0, rotate: 45, duration: .7, ease: 'expo.out', onComplete: () => w.remove() });
+  });
+  addEventListener('pointerup', () => cur.classList.remove('is-down'));
+
+  gsap.ticker.add(() => {
+    const vx = mx - lx, vy = my - ly, speed = Math.hypot(vx, vy); lx = mx; ly = my;
+    if (speed > 1 && !hidden) spawn(mx, my, -vx * .12, -vy * .12, Math.min(12, 2 + (speed / 5 | 0)), 1.8);
+
+    // reticle: free (tilts with velocity), lock (wraps the target like focus brackets), or label (opens up)
+    let tw = 36, th = 36, cx = mx, cy = my, tr = Math.max(-35, Math.min(35, vx * 1.6));
+    if (lock && lock.isConnected) {
+      const r = lock.getBoundingClientRect(), ocx = r.left + r.width / 2, ocy = r.top + r.height / 2;
+      tw = r.width + 16; th = r.height + 14; cx = ocx + (mx - ocx) * .1; cy = ocy + (my - ocy) * .1; tr = 0;
+    } else if (lab.textContent) { tw = th = 58; tr = 0; }
+    bx += (cx - bx) * .24; by += (cy - by) * .24; bw += (tw - bw) * .22; bh += (th - bh) * .22; rot += (tr - rot) * .14;
+    box.style.width = bw.toFixed(1) + 'px'; box.style.height = bh.toFixed(1) + 'px';
+    box.style.transform = `translate(${(bx - bw / 2).toFixed(1)}px,${(by - bh / 2).toFixed(1)}px) rotate(${rot.toFixed(1)}deg)`;
+    dot.style.translate = `${mx}px ${my}px`;
+    lab.style.translate = `${(bx + bw / 2 + 6).toFixed(1)}px ${(by - bh / 2 - 22).toFixed(1)}px`;
+
+    // magnetic pull on buttons, eased back to rest when released
+    if (magnet !== mEl && Math.abs(mX) + Math.abs(mY) < .3) { if (mEl) mEl.style.translate = ''; mEl = magnet; mX = mY = 0; }
+    if (mEl) {
+      let gx = 0, gy = 0;
+      if (magnet === mEl) { const r = mEl.getBoundingClientRect(); gx = Math.max(-10, Math.min(10, (mx - (r.left + r.width / 2 - mX)) * .22)); gy = Math.max(-7, Math.min(7, (my - (r.top + r.height / 2 - mY)) * .22)); }
+      mX += (gx - mX) * .2; mY += (gy - mY) * .2;
+      mEl.style.translate = `${mX.toFixed(2)}px ${mY.toFixed(2)}px`;
+    }
+
+    // pixel comet: snapped to a 4px grid, drawn only while particles are alive
+    if (P.length || trail.dataset.dirty) {
+      tc.clearRect(0, 0, vw, vh);
+      for (let i = P.length - 1; i >= 0; i--) {
+        const p = P[i];
+        p.x += p.vx; p.y += p.vy; p.vx *= .95; p.vy = p.vy * .95 + .04; p.l -= p.d;
+        if (p.l <= 0) { P.splice(i, 1); continue; }
+        const s = p.s * (.5 + p.l * .5);
+        tc.globalAlpha = Math.min(1, p.l * 1.4); tc.fillStyle = p.w ? ink : acc;
+        tc.fillRect(Math.round(p.x / 4) * 4, Math.round(p.y / 4) * 4, s, s);
+      }
+      tc.globalAlpha = 1;
+      trail.dataset.dirty = P.length ? '1' : '';
+    }
+  });
+}
 
 /* ---------- smooth scroll ---------- */
 let lenis = null;
