@@ -174,7 +174,7 @@ p{color:var(--muted)}
 .card{--cw:min(74vw,400px);position:absolute;left:50%;top:50%;width:var(--cw);aspect-ratio:3/4;margin:calc(var(--cw)*-.6667) 0 0 calc(var(--cw)*-.5);border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.1);will-change:transform,opacity;transform-style:preserve-3d}
 .no-js .card:not(:first-child){display:none}
 .card::after{content:"";position:absolute;inset:0;z-index:5;pointer-events:none;background:radial-gradient(360px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.1),transparent 55%);opacity:0;transition:opacity var(--d2) var(--ease)}
-.card.is-active:hover::after{opacity:1}
+@media (hover:hover) and (pointer:fine){.card.is-active:hover::after{opacity:1}}
 .card::before{content:"";position:absolute;inset:0;z-index:4;background:#05060A;opacity:var(--shade,0);pointer-events:none}
 .card:not(.is-active){cursor:pointer}
 .cover{position:absolute;inset:0;display:flex;flex-direction:column;padding:clamp(18px,5.5%,28px);color:#EEF1F6;background-color:var(--cbg);background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.3px);background-size:18px 18px}
@@ -1267,9 +1267,10 @@ function go(i, user, fromScroll) {
   cur = (i + W) % W; if (!fromScroll) place(cur);
   [descs, stats, links].forEach(set => set.forEach((el, k) => el.classList.toggle('is-active', k === cur)));
   if (animate) {
-    gsap.fromTo([...descs[cur].children, ...stats[cur].children], { y: 22, autoAlpha: 0, filter: 'blur(4px)' }, { y: 0, autoAlpha: 1, filter: 'blur(0px)', duration: 1.1, ease: 'expo.out', stagger: .06, delay: .15, overwrite: true, clearProps: 'filter' });
+    const rich = fine && !narrow();
+    gsap.fromTo([...descs[cur].children, ...stats[cur].children], rich ? { y: 22, autoAlpha: 0, filter: 'blur(4px)' } : { y: 12, autoAlpha: 0 }, { y: 0, autoAlpha: 1, ...(rich ? { filter: 'blur(0px)', clearProps: 'filter' } : {}), duration: rich ? 1.1 : .6, ease: 'expo.out', stagger: rich ? .06 : .03, delay: rich ? .15 : 0, overwrite: true });
     // the incoming cover builds itself: title, line, then the screen rises into place
-    if (!fromScroll) gsap.fromTo(cards[cur].querySelectorAll('.cover-title, .cover-line, .cover-vis'), { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.2, ease: 'expo.out', stagger: .08, delay: .35, overwrite: true });
+    if (!fromScroll && rich) gsap.fromTo(cards[cur].querySelectorAll('.cover-title, .cover-line, .cover-vis'), { y: 26, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 1.2, ease: 'expo.out', stagger: .08, delay: .35, overwrite: true });
   }
   tabs.forEach((t, k) => t.setAttribute('aria-pressed', k === cur));
   wIdx.textContent = String(cur + 1).padStart(2, '0');
@@ -1289,12 +1290,13 @@ $('#stage2').addEventListener('pointermove', e => {
   c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
 }, { passive: true });
 /* touch / narrow screens: swipe the covers */
-let sx = null;
-$('#stage2').addEventListener('pointerdown', e => { sx = reelST ? null : e.clientX; });
+let sx = null, sy = 0;
+$('#stage2').addEventListener('pointerdown', e => { sx = reelST ? null : e.clientX; sy = e.clientY; });
+$('#stage2').addEventListener('pointercancel', () => { sx = null; });
 $('#stage2').addEventListener('pointerup', e => {
   if (sx === null) return;
-  const dx = e.clientX - sx; sx = null;
-  if (Math.abs(dx) > 40) { swiped = true; setTimeout(() => swiped = false, 50); buzz(14); go(cur + (dx < 0 ? 1 : -1), true); }
+  const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
+  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) { swiped = true; setTimeout(() => swiped = false, 50); buzz(14); go(cur + (dx < 0 ? 1 : -1), true); }
 });
 /* desktop: pin the reel and let scroll step through the four projects */
 /* desktop: the deck is scrubbed by scroll. Every card's position is a continuous function of scroll progress,
@@ -1338,6 +1340,7 @@ gsap.matchMedia().add('(min-width: 1080px)', () => {
   runAutoplay();
   return () => {
     fan.kill(); reelST = null; film.classList.remove('scrubbing'); deckSpread = 1;
+    cards.forEach(c => c.style.removeProperty('--shade'));
     coverParts.flat().forEach(el => el && gsap.set(el, { clearProps: 'x,y' }));
     place(cur, true); runAutoplay();
   };
