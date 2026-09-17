@@ -186,6 +186,24 @@ p{color:var(--muted)}
 @media (hover:hover) and (pointer:fine){.card.is-active:hover::after{opacity:1}}
 .card::before{content:"";position:absolute;inset:0;z-index:4;background:#05060A;opacity:var(--shade,0);pointer-events:none}
 .card:not(.is-active){cursor:pointer}
+
+/* ---- narrow screens: a native scroll-snap rail, not a JS-tweened deck ----
+   The browser owns the gesture here: the cards track the finger 1:1, carry real momentum, and a
+   new flick interrupts the last one. No pointer handlers, no transforms, nothing to fight the
+   page's vertical scroll. The pinned 3D deck above 1080px is untouched. */
+@media (max-width:1079px){
+  .stage{display:flex;align-items:center;gap:clamp(12px,3vw,20px);height:auto;padding-block:6px;
+    padding-inline:calc((100% - min(74vw,400px))/2);
+    overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;
+    scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
+    perspective:none;transform-style:flat;touch-action:auto}
+  .stage::-webkit-scrollbar{display:none}
+  /* relative, not static: .cover and .cover-foot are absolutely positioned against the card */
+  .card{position:relative;left:auto;top:auto;flex:0 0 min(74vw,400px);margin:0;scroll-snap-align:center;
+    transition:opacity .35s var(--ease)}
+  .card:not(.is-active){opacity:.5}
+  .stage:focus-visible{outline:2px solid var(--accent-text);outline-offset:4px;border-radius:20px}
+}
 .cover{position:absolute;inset:0;display:flex;flex-direction:column;padding:clamp(18px,5.5%,28px);color:#EEF1F6;background-color:var(--cbg);background-image:radial-gradient(rgba(255,255,255,.07) 1px,transparent 1.3px);background-size:18px 18px}
 .cover-top{display:flex;justify-content:space-between;gap:12px;font:500 10px/1.4 var(--mono);letter-spacing:.14em;text-transform:uppercase;color:rgba(238,241,246,.62)}
 .cover-title{font:800 clamp(48px,8vw,84px)/.84 var(--display);text-transform:uppercase;letter-spacing:-.005em;margin-top:clamp(14px,4%,22px)}

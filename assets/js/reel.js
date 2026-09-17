@@ -9,7 +9,12 @@ export function initReel() {
 /* ---------- work reel ---------- */
 const cards = $$('#stage2 .card'), tabs = $$('#film .tab'), descs = $$('#workDesc > div'), stats = $$('#workStats > div'), links = $$('#workLinks > div'), wIdx = $('#wIdx'), film = $('#film');
 const W = cards.length, AUTOPLAY = 7;
-let cur = 0, autoTl = null, userTook = false, workInView = false, reelST = null, swiped = false, lastProject = '';
+let cur = 0, autoTl = null, userTook = false, workInView = false, reelST = null, railOn = false, lastProject = '';
+const stage = $('#stage2');
+const markActive = () => cards.forEach((c, k) => c.classList.toggle('is-active', k === cur));
+const railTo = (k, instant) => stage.scrollTo({ left: cards[k].offsetLeft - (stage.clientWidth - cards[k].offsetWidth) / 2, behavior: instant || reduced || !animate ? 'auto' : 'smooth' });
+// whichever card sits closest to the middle of the rail is the one being read
+const railIndex = () => { const mid = stage.scrollLeft + stage.clientWidth / 2; let best = 0, bd = Infinity; cards.forEach((c, k) => { const d = Math.abs(c.offsetLeft + c.offsetWidth / 2 - mid); if (d < bd) { bd = d; best = k; } }); return best; };
 const narrow = () => innerWidth < 1080;
 function place(i, immediate) {
   cards.forEach((c, k) => {
@@ -39,7 +44,9 @@ function go(i, user, fromScroll) {
     return;
   }
   if (user) userTook = true;
+  if (railOn && !fromScroll) { railTo((i + W) % W); return; }
   cur = (i + W) % W; if (!fromScroll) place(cur);
+  if (railOn) markActive();
   [descs, stats, links].forEach(set => set.forEach((el, k) => el.classList.toggle('is-active', k === cur)));
   if (animate) {
     const rich = fine && !narrow();
@@ -59,21 +66,45 @@ place(0, true); go(0);
 tabs.forEach((t, k) => t.addEventListener('click', () => go(k, true)));
 $('#wPrev').addEventListener('click', () => go(cur - 1, true));
 $('#wNext').addEventListener('click', () => go(cur + 1, true));
-cards.forEach(c => c.addEventListener('click', () => { if (swiped) { swiped = false; return; } const off = +c.dataset.off; if (off) go(cur + off, true); }));
+cards.forEach(c => c.addEventListener('click', () => { const k = cards.indexOf(c); if (k !== cur) go(k, true); }));
 /* soft light that follows the pointer across the active cover */
 if (fine) $('#stage2').addEventListener('pointermove', e => {
   const c = cards[cur], r = c.getBoundingClientRect();
   c.style.setProperty('--mx', ((e.clientX - r.left) / r.width * 100).toFixed(1) + '%');
   c.style.setProperty('--my', ((e.clientY - r.top) / r.height * 100).toFixed(1) + '%');
 }, { passive: true });
-/* touch / narrow screens: swipe the covers */
-let sx = null, sy = 0;
-$('#stage2').addEventListener('pointerdown', e => { sx = reelST ? null : e.clientX; sy = e.clientY; });
-$('#stage2').addEventListener('pointercancel', () => { sx = null; });
-$('#stage2').addEventListener('pointerup', e => {
-  if (sx === null) return;
-  const dx = e.clientX - sx, dy = e.clientY - sy; sx = null;
-  if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) { track('project_swipe', { swipe_direction: dx < 0 ? 'next' : 'prev' }); swiped = true; setTimeout(() => swiped = false, 50); buzz(14); go(cur + (dx < 0 ? 1 : -1), true); }
+/* narrow screens: the rail is a native scroll-snap container, so the browser owns the gesture.
+   We only listen: whichever card is centred becomes the active project. */
+gsap.matchMedia().add('(max-width: 1079px)', () => {
+  railOn = true;
+  gsap.killTweensOf(cards);
+  gsap.set(cards, { clearProps: 'transform,opacity,visibility,zIndex' });  // drop the deck's transforms, keep each card's --cbg/--tint
+  cards.forEach(c => { c.style.removeProperty('--shade'); c.removeAttribute('aria-hidden'); });
+  film.classList.remove('scrubbing');
+  markActive(); railTo(cur, true);
+  let queued = false;
+  const onRail = () => {
+    if (queued) return; queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      const i = railIndex();
+      if (i !== cur) { const dir = i > cur ? 'next' : 'prev'; go(i, false, true); buzz(8); track('project_swipe', { swipe_direction: dir }); }
+    });
+  };
+  // the first touch on the rail is the reader taking over; stop advancing at them
+  const onTake = () => { if (!userTook) { userTook = true; runAutoplay(); } };
+  stage.addEventListener('scroll', onRail, { passive: true });
+  stage.addEventListener('pointerdown', onTake, { passive: true });
+  stage.setAttribute('tabindex', '0');
+  stage.setAttribute('role', 'group');
+  stage.setAttribute('aria-label', 'Project covers, scrollable');
+  runAutoplay();
+  return () => {
+    railOn = false;
+    stage.removeEventListener('scroll', onRail);
+    stage.removeEventListener('pointerdown', onTake);
+    ['tabindex', 'role', 'aria-label'].forEach(a => stage.removeAttribute(a));
+  };
 });
 /* desktop: pin the reel and let scroll step through the four projects */
 /* desktop: the deck is scrubbed by scroll. Every card's position is a continuous function of scroll progress,
@@ -138,6 +169,6 @@ $('#work').addEventListener('keydown', e => {
   if (e.key === 'ArrowRight') { e.preventDefault(); go(cur + 1, true); }
   if (e.key === 'ArrowLeft') { e.preventDefault(); go(cur - 1, true); }
 });
-onWidth(() => reelST ? scrubDeck(deckPos) : place(cur, true));
+onWidth(() => reelST ? scrubDeck(deckPos) : railOn ? railTo(cur, true) : place(cur, true));
 ScrollTrigger.create({ trigger: '#reel', start: 'top 75%', end: 'bottom 25%', onToggle: st => { workInView = st.isActive; if (autoTl) st.isActive ? autoTl.play() : autoTl.pause(); } });
 }
