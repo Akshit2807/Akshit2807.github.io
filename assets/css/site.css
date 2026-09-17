@@ -18,17 +18,43 @@
   --max:1440px;
   --sv:clamp(96px,11vw,168px);
   --r:18px;
+  --surface:transparent;
+  --accent-soft:rgba(59,91,240,.14);
+  --shadow-1:none;
+  --shadow-2:0 40px 80px -30px rgba(0,0,0,.6);
   color-scheme:dark;
 }
 :root[data-theme="light"]{
-  --ink:18,19,26;
-  --bg:#F3F1EA; --bg2:#ECE9E1; --bg3:#E3DFD5;
-  --muted:rgba(var(--ink),.72); --dim:rgba(var(--ink),.64);
-  --line:rgba(var(--ink),.1); --line2:rgba(var(--ink),.2);
-  --accent:#2B4BE0; --accent-2:#1F3BC4; --accent-text:#2440C8;
-  --glass:rgba(243,241,234,.82);
+  --ink:11,15,30;
+  --bg:#F4F6FB; --bg2:#FFFFFF; --bg3:#E8ECF7;
+  --muted:rgba(var(--ink),.72); --dim:rgba(var(--ink),.63);   /* .63 keeps the small mono labels at 4.5:1 on the ground */
+  --line:rgba(var(--ink),.1); --line2:rgba(var(--ink),.17);
+  --accent:#2747F0; --accent-2:#1B33C9; --accent-text:#1E38D8;
+  --glass:rgba(255,255,255,.8);
+  --surface:#FFFFFF;
+  --accent-soft:rgba(39,71,240,.09);
+  --shadow-1:0 1px 2px rgba(16,24,64,.05),0 4px 14px -8px rgba(16,24,64,.16);
+  --shadow-2:0 28px 64px -30px rgba(16,24,64,.4),0 3px 12px -6px rgba(16,24,64,.14);
   color-scheme:light;
 }
+
+/* ---- light theme surfaces ----
+   Dark separates planes with hairlines on one ground. Light cannot: it needs real surfaces and
+   real shadows, or everything flattens into one sheet of paper. Cells go white against the
+   porcelain ground, the project covers keep their art-directed dark and now cast a shadow. */
+:root[data-theme="light"] body{background:radial-gradient(130% 80% at 50% -12%,var(--accent-soft),transparent 62%) fixed,var(--bg)}
+:root[data-theme="light"] .pixel-field{background-image:radial-gradient(rgba(39,71,240,.13) 1px,transparent 1.5px)}
+:root[data-theme="light"] .nav,:root[data-theme="light"] .mood{box-shadow:var(--shadow-1)}
+:root[data-theme="light"] .tile,:root[data-theme="light"] .num,:root[data-theme="light"] .b-main,:root[data-theme="light"] .b-now{background:var(--surface)}
+:root[data-theme="light"] .scope{background-color:var(--surface)}
+:root[data-theme="light"] .card{box-shadow:var(--shadow-2)}
+:root[data-theme="light"] .sat{box-shadow:0 12px 26px -14px rgba(16,24,64,.5),inset 0 1px 0 rgba(255,255,255,.14)}
+:root[data-theme="light"] .avatar,:root[data-theme="light"] .pre canvas{filter:drop-shadow(0 22px 30px rgba(16,24,64,.26))}
+:root[data-theme="light"] .sheet-bg{background:rgba(16,24,64,.34)}
+:root[data-theme="light"] .sheet-box{background:var(--surface);box-shadow:var(--shadow-2)}
+:root[data-theme="light"] .field input,:root[data-theme="light"] .field textarea{background:var(--surface)}
+:root[data-theme="light"] .status-msg.ok{color:#0E8F4E}
+:root[data-theme="light"] .status-msg.err{color:#C5283D}
 
 /* ============ base ============ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
