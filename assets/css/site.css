@@ -192,15 +192,17 @@ p{color:var(--muted)}
    new flick interrupts the last one. No pointer handlers, no transforms, nothing to fight the
    page's vertical scroll. The pinned 3D deck above 1080px is untouched. */
 @media (max-width:1079px){
-  .stage{--rail-cw:min(60vw,340px);
-    display:flex;align-items:center;gap:clamp(12px,3vw,20px);height:auto;padding-block:6px;
-    padding-inline:calc((100% - var(--rail-cw))/2);
+  .stage{--rail-cw:min(68vw,380px);
+    display:flex;align-items:center;gap:0;height:auto;padding-block:6px;
+    /* the gutter absorbs the cards' negative margin, or the first and last can never centre */
+    padding-inline:calc((100% - var(--rail-cw))/2 + var(--rail-cw) * .13);
     overflow-x:auto;overflow-y:hidden;scrollbar-width:none;-webkit-overflow-scrolling:touch;
     scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
     perspective:none;transform-style:flat;touch-action:auto}
   .stage::-webkit-scrollbar{display:none}
   /* relative, not static: .cover and .cover-foot are absolutely positioned against the card */
-  .card{position:relative;left:auto;top:auto;flex:0 0 var(--rail-cw);margin:0;scroll-snap-align:center;
+  .card{position:relative;left:auto;top:auto;flex:0 0 var(--rail-cw);
+    margin:0 calc(var(--rail-cw) * -.13);scroll-snap-align:center;   /* neighbours tuck behind the centre */
     transition:opacity .35s var(--ease)}
   .card:not(.is-active){opacity:.5}
   .stage:focus-visible{outline:2px solid var(--accent-text);outline-offset:4px;border-radius:20px}
@@ -509,9 +511,9 @@ p{color:var(--muted)}
   }
 }
 @keyframes railDeck{
-  from{opacity:.52;transform:rotateY(22deg) scale(.84)}
-  50%{opacity:1;transform:rotateY(0deg) scale(1)}
-  to{opacity:.52;transform:rotateY(-22deg) scale(.84)}
+  from{opacity:.5;transform:rotateY(20deg) scale(.78);z-index:1}
+  50%{opacity:1;transform:rotateY(0deg) scale(1);z-index:3}
+  to{opacity:.5;transform:rotateY(-20deg) scale(.78);z-index:1}
 }
 /* the artwork drifts a little against its card, the parallax the old deck had */
 @keyframes railArt{
