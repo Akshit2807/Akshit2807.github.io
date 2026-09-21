@@ -82,11 +82,21 @@ gsap.matchMedia().add('(max-width: 1079px)', () => {
   cards.forEach(c => { c.style.removeProperty('--shade'); c.removeAttribute('aria-hidden'); });
   film.classList.remove('scrubbing');
   markActive(); railTo(cur, true);
-  let queued = false;
+  let queued = false, lastX = stage.scrollLeft, lastT = performance.now();
+  // the deck smears while it travels and sharpens as it settles: blur from scroll velocity
+  let rushT = 0;
+  const clearRush = () => { clearTimeout(rushT); rushT = setTimeout(() => stage.style.setProperty('--rush', 0), 110); };
   const onRail = () => {
     if (queued) return; queued = true;
     requestAnimationFrame(() => {
       queued = false;
+      if (!reduced) {
+        const now = performance.now(), dt = Math.max(16, now - lastT);
+        const v = Math.abs(stage.scrollLeft - lastX) / dt;      // px per ms
+        lastX = stage.scrollLeft; lastT = now;
+        stage.style.setProperty('--rush', Math.min(7, v * 3).toFixed(2));
+        clearRush();
+      }
       const i = railIndex();
       if (i !== cur) { const dir = i > cur ? 'next' : 'prev'; go(i, false, true); buzz(8); track('project_swipe', { swipe_direction: dir }); }
     });
@@ -101,6 +111,7 @@ gsap.matchMedia().add('(max-width: 1079px)', () => {
   runAutoplay();
   return () => {
     railOn = false;
+    clearTimeout(rushT); stage.style.removeProperty('--rush');
     stage.removeEventListener('scroll', onRail);
     stage.removeEventListener('pointerdown', onTake);
     ['tabindex', 'role', 'aria-label'].forEach(a => stage.removeAttribute(a));
@@ -110,13 +121,21 @@ gsap.matchMedia().add('(max-width: 1079px)', () => {
 /* desktop: the deck is scrubbed by scroll. Every card's position is a continuous function of scroll progress,
    so the motion is exactly as fast as the reader scrolls, reverses with them, and settles with a soft snap. */
 const filmInd = $('#filmInd'), coverParts = cards.map(c => [c.querySelector('.cover-vis'), c.querySelector('.cover-title')]);
-let deckPos = 0, deckSpread = 1;
+let deckPos = 0, deckSpread = 1, lastDeckPos = 0, deckRushT = 0;
 function scrubDeck(p) {
+  // same motion blur as the rail: a function of travel speed, zero once the deck settles
+  const rush = reduced ? 0 : Math.min(7, Math.abs(p - lastDeckPos) * 45);
+  lastDeckPos = p;
+  if (rush > .05) {
+    clearTimeout(deckRushT);
+    deckRushT = setTimeout(() => cards.forEach(c => c.style.filter = 'none'), 110);
+  }
   cards.forEach((c, k) => {
     const o = k - p, a = Math.abs(o), f = deckSpread;
     gsap.set(c, {
       x: `${o * 58 * f}%`, rotateY: o * -26 * f, z: -Math.min(a, 2) * 260 * f,
-      scale: 1 - Math.min(a, 1.5) * .18 * f, autoAlpha: a > 1.8 ? 0 : a > 1.3 ? (1.8 - a) * 2 : 1, zIndex: Math.round(1000 - a * 400)
+      scale: 1 - Math.min(a, 1.5) * .18 * f, autoAlpha: a > 1.8 ? 0 : a > 1.3 ? (1.8 - a) * 2 : 1, zIndex: Math.round(1000 - a * 400),
+      filter: rush > .05 ? `blur(${rush.toFixed(2)}px)` : 'none'
     });
     c.style.setProperty('--shade', (Math.min(a, 1.2) * .55).toFixed(3));
     c.classList.toggle('is-active', a < .5); c.dataset.off = Math.round(o); c.setAttribute('aria-hidden', a < .5 ? 'false' : 'true');

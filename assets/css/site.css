@@ -203,7 +203,8 @@ p{color:var(--muted)}
   /* relative, not static: .cover and .cover-foot are absolutely positioned against the card */
   .card{position:relative;left:auto;top:auto;flex:0 0 var(--rail-cw);
     margin:0 calc(var(--rail-cw) * -.13);scroll-snap-align:center;   /* neighbours tuck behind the centre */
-    transition:opacity .35s var(--ease)}
+    filter:blur(calc(var(--rush,0) * 1px));
+    transition:opacity .35s var(--ease),filter .18s ease-out}
   .card:not(.is-active){opacity:.5}
   .stage:focus-visible{outline:2px solid var(--accent-text);outline-offset:4px;border-radius:20px}
 }
