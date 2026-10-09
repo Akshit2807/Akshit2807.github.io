@@ -1,0 +1,54 @@
+/* d12 · mobile Live Activity: the gutter's job on phones. A floating pill says where the request is; tap it and it grows into the page's navigation */
+@media (max-width:900px){
+  /* bottom-centre, clear of Safari's floating toolbar */
+  .island{position:fixed;z-index:86;left:0;right:0;bottom:calc(16px + env(safe-area-inset-bottom));margin:0 auto;width:fit-content;display:flex;flex-direction:column;contain:layout;
+    transition:opacity .35s var(--ease),transform .5s var(--ease),visibility 0s}
+  .island.away,.booting .island{opacity:0;transform:translateY(24px);visibility:hidden;pointer-events:none;transition:opacity .3s var(--ease),transform .4s var(--ease),visibility 0s .4s}
+  .island.open{width:min(calc(100vw - 24px),420px)}
+
+  /* the black glass: its own layer, so the width morph is a scaleX and the open morph a clip (js/m-island.js) */
+  .island .shell{position:absolute;inset:0;border-radius:999px;background:rgba(12,12,14,.9);border:1px solid var(--hair2);will-change:transform}
+  .island.open .shell{border-radius:28px;background:#121315}   /* opaque once it's a sheet: no page text ghosting through */
+
+  /* collapsed: live dot · where you are · page progress · n/12 · Menu */
+  .island .pill{position:relative;display:flex;justify-content:center;width:100%;height:46px;border-radius:999px;cursor:pointer;-webkit-tap-highlight-color:transparent;box-shadow:0 14px 34px -12px rgba(0,0,0,.75),0 2px 8px rgba(0,0,0,.35)}   /* the shadow lives here: the shell gets clipped while it folds */
+  .island.open .pill{border-radius:0 0 28px 28px;box-shadow:none}
+  .island .pill:focus-visible{outline-offset:3px;border-radius:999px}
+  .island .face{display:flex;align-items:center;gap:12px;height:100%;padding:0 18px 0 16px;transition:transform .25s var(--ease)}
+  .island .pill:active .face{transform:scale(.97)}
+  .island .lhs,.island .rhs{display:flex;align-items:center;gap:10px}
+  .island .dot{position:relative;width:7px;height:7px;border-radius:50%;background:var(--signal);box-shadow:0 0 10px var(--signal)}
+  .motion .island .dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--signal);animation:isl-pulse 2.4s var(--ease) infinite}
+  .island .lbl{position:relative;font-size:14px;line-height:18px;font-weight:600;letter-spacing:-.01em;color:var(--paper);white-space:nowrap}
+  .island .lbl b{display:block;font-weight:inherit}
+  .island .lbl .out{position:absolute;left:0;top:0}
+  .island .trk{width:30px;height:3px;border-radius:2px;background:rgba(236,232,223,.14);overflow:hidden}
+  .island .trk i{display:block;height:100%;background:var(--signal);transform-origin:left;transform:scaleX(0)}
+  .island .cnt{min-width:5ch;text-align:right;font:400 12px/1 var(--mono);font-variant-numeric:tabular-nums;color:var(--paper2)}
+  .island .menu{padding-left:10px;border-left:1px solid var(--hair2);font-size:13px;line-height:14px;font-weight:400;color:var(--paper);transition:color .3s}
+  .island.open .menu{color:var(--signal)}
+
+  /* open: four shortcuts, a divider, then every span with its slice of the waterfall (the gutter's --o/--w) */
+  .island .sheet{position:relative;display:none;max-height:calc(70vh - 46px);max-height:calc(70svh - 46px);overflow-y:auto;overscroll-behavior:contain;scroll-padding-block:12px;scrollbar-width:none;border-bottom:1px solid var(--hair);-webkit-mask-image:linear-gradient(#000 calc(100% - 36px),transparent);mask-image:linear-gradient(#000 calc(100% - 36px),transparent)}   /* the fade says there is more below */
+  .island .sheet::-webkit-scrollbar{display:none}
+  .island.open .sheet{display:block}
+  .island .jump{position:relative;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:14px 14px 16px}
+  .island .jump::after{content:"";position:absolute;left:22px;right:22px;bottom:0;height:1px;background:var(--hair2)}
+  .island .jump a{display:flex;align-items:center;justify-content:center;min-height:52px;padding:0 10px;border-radius:16px;border:1px solid var(--hair2);background:rgba(236,232,223,.04);font-size:15.5px;font-weight:600;letter-spacing:-.01em;color:var(--paper);-webkit-tap-highlight-color:transparent;transition:background .2s,border-color .3s,color .3s}
+  .island .jump a:active{background:rgba(236,232,223,.09)}
+  .island .jump a.on{border-color:var(--signal);color:var(--signal);background:rgba(255,178,63,.08)}
+  .island ol{list-style:none;padding:8px 0 40px}
+  .island ol a{display:grid;grid-template-columns:minmax(0,1fr) 124px;align-items:center;gap:16px;min-height:48px;padding:0 22px;font-size:16px;font-weight:500;color:var(--paper2);-webkit-tap-highlight-color:transparent;transition:background .2s}
+  .island ol a:active{background:rgba(236,232,223,.05)}
+  .island .sheet a:focus-visible{outline-offset:-3px;border-radius:12px}
+  .island .jump a:focus-visible{border-radius:16px}
+  .island ol a i{display:block;height:4px;border-radius:2px;background:var(--hair2);width:calc(var(--w,30px) * 1.25);margin-left:calc(var(--o,0px) * 1.25)}
+  .island ol a.done i{background:rgba(255,178,63,.45)}
+  .island ol a.on{color:var(--signal)}
+  .island ol a.on i{background:var(--signal);box-shadow:0 0 12px -2px var(--signal)}
+
+  .island-dim{position:fixed;inset:0;z-index:85;background:rgba(0,0,0,.72);opacity:0;visibility:hidden;touch-action:none;-webkit-tap-highlight-color:transparent;transition:opacity .35s var(--ease),visibility 0s .35s}
+  .island-dim.on{opacity:1;visibility:visible;transition:opacity .35s var(--ease)}
+
+  @keyframes isl-pulse{from{transform:scale(1);opacity:.7}to{transform:scale(3.2);opacity:0}}
+}

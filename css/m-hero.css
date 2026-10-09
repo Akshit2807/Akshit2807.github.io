@@ -1,0 +1,18 @@
+/* d12 · mobile first screen: the crimson portrait goes full-bleed under the nav, the name stands on its lower third */
+@media (max-width:900px){
+  /* --mh-h photo height · --mh-f name size (fits "Pahade" at 320px, capped on short landscape) · the name ends 5svh above the photo's bottom */
+  #me{--mh-h:82svh;--mh-f:clamp(60px,min(24vw,24svh),190px);padding-top:max(110px,calc(var(--mh-h) - 1.78 * var(--mh-f) - 5svh));overflow:hidden;overflow:clip}
+  #me .who{grid-row:1}
+  #me .portrait{position:absolute;inset:0 0 auto;z-index:0;width:auto;max-width:none;height:var(--mh-h);margin:0;transform-origin:50% 30%;
+    -webkit-mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.35) 11%,#000 30%,#000 48%,rgba(0,0,0,.62) 66%,rgba(0,0,0,.22) 84%,transparent);
+    mask-image:linear-gradient(to bottom,transparent,rgba(0,0,0,.35) 11%,#000 30%,#000 48%,rgba(0,0,0,.62) 66%,rgba(0,0,0,.22) 84%,transparent)}   /* top fade keeps the nav legible; long fall into the black page; no side fades */
+  #me .portrait img{width:100%;height:100%;object-fit:cover;object-position:50% 30%;transform-origin:50% 30%;-webkit-mask-image:none;mask-image:none}
+  #me .name{font-size:var(--mh-f)}
+  #me .role{font-size:clamp(18px,4.8vw,22px);margin-top:16px}
+
+  /* entry: the photo settles in with the name rise; the figure itself is left to the scroll scrub (js/m-hero.js) */
+  .motion #me .portrait.rv{opacity:1;filter:none;transform:none;transition:none;will-change:transform,opacity}
+  .motion #me .name{will-change:transform}
+  .motion #me .portrait img{opacity:0;transform:scale(1.08);transition:opacity 1.6s var(--ease),transform 1.6s var(--ease)}
+  .ready #me .portrait img{opacity:1;transform:none}
+}
